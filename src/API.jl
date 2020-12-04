@@ -956,7 +956,7 @@ function build(ctx::Context, pkgs::Vector{PackageSpec}; verbose=false, kwargs...
     foreach(pkg -> pkg.mode = PKGMODE_MANIFEST, pkgs)
     manifest_resolve!(ctx.env.manifest, pkgs)
     ensure_resolved(ctx.env.manifest, pkgs)
-    Operations.build(ctx, pkgs, verbose)
+    Operations.build(ctx, Set{UUID}(pkg.uuid for pkg in pkgs), verbose)
 end
 
 function _is_stale(paths::Vector{String}, sourcepath::String)
@@ -1423,11 +1423,11 @@ function instantiate(ctx::Context; manifest::Union{Bool, Nothing}=nothing,
     end
 
     # Install all packages
-    new_apply = Operations.download_source(ctx, pkgs)
+    new_apply = Operations.download_source(ctx)
     # Install all artifacts
-    Operations.download_artifacts(ctx.env, pkgs; platform=platform, verbose=verbose)
+    Operations.download_artifacts(ctx.env; platform=platform, verbose=verbose)
     # Run build scripts
-    Operations.build_versions(ctx, union(UUID[pkg.uuid for pkg in new_apply], new_git); verbose=verbose)
+    Operations.build_versions(ctx, union(new_apply, new_git); verbose=verbose)
 
     allow_autoprecomp && _auto_precompile(ctx; kwargs...)
 end
